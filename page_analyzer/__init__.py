@@ -1,5 +1,5 @@
-from page_analyzer.app import index
+from page_analyzer.app import app
 
 __all__ = (
-        'index'
+        'app'
         )
