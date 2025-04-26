@@ -3,3 +3,4 @@ __pycache__/
 *.cast
 .vscode
 *.pyc
+.python_version
