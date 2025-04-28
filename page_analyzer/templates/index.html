@@ -1,39 +1,26 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
-    <title>Анализатор страниц</title>
-  </head>
-  <body>
-    <header>
-      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-          <a class="navbar-brand" href="{{ url_for('index') }}">Анализатор страниц</a>
-          <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link" href="#">Сайты</a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>
-    </header>
-    <main>
-      <div class="container-md">
-        <div class="row justify-content-md-center mt-3">
-          <div class="col-8 bg-light border rounded-3 p-5">
-            <h1 class="display-3">Анализатор страниц</h1>
-            <p class="lead">Бесплатно проверяйте сайты на SEO-пригодность</p>
-            <form class="justify-content-center d-flex">
-              <input type="text" class="form-control form-control-lg" placeholder="https://www.example.com" value="">
-              <input type="submit" class="btn btn-lg btn-primary px-5 mx-3 text-uppercase" value="Проверить">
-            </form>
-          </div>
-        </div>
+{% extends "layout.html" %}
+{% block main %}
+{% if messages %}
+  {% for category, message in messages %}
+    <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+<main>
+  <div class="container-md">
+    <div class="row justify-content-md-center mt-3">
+      <div class="col-8 bg-light border rounded-3 p-5">
+        <h1 class="display-3">Анализатор страниц</h1>
+        <p class="lead">Бесплатно проверяйте сайты на SEO-пригодность</p>
+        <form class="justify-content-center d-flex" action="{{ url_for('urls_post') }}" method="post">
+          <label for="text" class="visually-hidden">Url для проверки</label>
+          <input name="url" type="text" class="form-control form-control-lg" placeholder="https://www.example.com" value="{{ urls }}">
+          <input type="submit" class="btn btn-lg btn-primary px-5 mx-3 text-uppercase" value="Проверить">
+        </form>
       </div>
-    </main>    
-  </body>
-</html>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
