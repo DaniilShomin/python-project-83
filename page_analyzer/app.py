@@ -44,7 +44,7 @@ def urls_post():
             'index.html',
             urls = url,
             messages=messages
-        )
+        ), 422
     if len(url) > 255 or not validators.url(url):
         flash('Некорректный URL', 'danger')
         messages = get_flashed_messages(with_categories=True)
@@ -52,19 +52,33 @@ def urls_post():
             'index.html',
             urls = url,
             messages=messages
-        )   
+        ), 422   
     conn = psycopg2.connect(DATABASE_URL)
     repo = UrlReposetory(conn)
     norm_url = {
         'name': normalized_urls(url),
         'created_at': date.today()
     }
-    if repo.find(norm_url['name']):
+    url_in_repo = repo.get_by_name(norm_url['name'])
+    if url_in_repo:
         flash('Страница уже существует', 'info')
         conn.close()
-        return redirect(url_for('urls_get'))
+        return redirect(url_for('urls_show', id=url_in_repo['id'])), 302
     
     repo.save(norm_url)
     conn.close()
     flash('Страница успешно добавлена', 'success')
-    return redirect(url_for('urls_get'))
+    return redirect(url_for('urls_get')), 302
+
+@app.route('/urls/<id>')
+def urls_show(id):
+    conn = psycopg2.connect(DATABASE_URL)
+    repo = UrlReposetory(conn)
+    url = repo.find(id)
+    conn.close()
+    messages = get_flashed_messages(with_categories=True)
+    return render_template(
+        'urls/show.html',
+        messages=messages,
+        url=url
+    )

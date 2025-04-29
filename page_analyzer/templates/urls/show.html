@@ -9,27 +9,28 @@
 {% endif %}
 <main>
   <div class="container-md mt-3">
-    <h1>Сайты</h1>
+    <h1>Сайт: {{ url.name }}</h1>
     <table class="table table-bordered table-hover" data-test="urls">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Имя</th>
-          <th>Последняя проверка</th>
-          <th>Код ответа</th>
-          </tr>
-      </thead>
       <tbody>
-        {% for url in urls %}
         <tr>
+            <td>ID</td>
             <td>{{ url.id }}</td>
-            <td><a href="{{ url_for('urls_show', id=url.id) }}">{{ url.name }}</a></td>
-            <td></td>
-            <td></td>
         </tr>
-        {% endfor %}
+        <tr>
+            <td>Имя</td>
+            <td>{{ url.name }}</td>
+        </tr>
+        <tr>
+            <td>Дата создания</td>
+            <td>{{ url.created_at }}</td>
+        </tr>
       </tbody>
     </table>
+    <h2 class="mt-5 mb-3">Проверки</h2>
+    <form action="" method="post">
+        <input type="submit" class="btn btn-primary" value="Запустить проверку">
+    </form>
+
   </div>
 </main>
 {% endblock %}

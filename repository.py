@@ -13,9 +13,9 @@ class UrlReposetory:
                 cur.execute("SELECT * FROM urls")
             return [dict(row) for row in cur]
         
-    def find(self, name):
+    def find(self, id):
         with self.conn.cursor(cursor_factory=DictCursor) as cur:
-            cur.execute("SELECT * FROM urls WHERE name = %s", (name,))
+            cur.execute("SELECT * FROM urls WHERE id = %s", (id,))
             row = cur.fetchone()
             return dict(row) if row else None
         
@@ -36,9 +36,27 @@ class UrlReposetory:
     def _create(self, url):
         with self.conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id",
+                """INSERT INTO urls (name, created_at) 
+                VALUES (%s, %s) RETURNING id""",
                 (url['name'], url['created_at']),
             )
             id = cur.fetchone()[0]
             url['id'] = id
         self.conn.commit()
+
+    def get_by_name(self, name):
+        with self.conn.cursor(cursor_factory=DictCursor) as cur:
+            cur.execute("SELECT * FROM urls WHERE name = %s", (name,))
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+
+#         try:
+#     with conn.cursor() as curs:
+#         curs.execute('INSERT INTO ...')
+#         conn.commit()  # Не забудьте выполнить коммит, если работаем вне режима autocommit
+# except psycopg2.DatabaseError as e:
+#     print(f"Ошибка при выполнении запроса: {e}")
+#     conn.rollback()  # Откатить изменения в случае ошибки
+# finally:
+#     conn.close() 
