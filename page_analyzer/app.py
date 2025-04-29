@@ -26,7 +26,7 @@ def urls_get():
     conn = psycopg2.connect(DATABASE_URL)
     repo = UrlReposetory(conn)
     urls = repo.get_content(reversed=True)
-    conn.closed()
+    conn.close()
     messages = get_flashed_messages(with_categories=True)
     return render_template(
         "urls/view.html",
@@ -61,10 +61,10 @@ def urls_post():
     }
     if repo.find(norm_url['name']):
         flash('Страница уже существует', 'info')
-        conn.closed()
+        conn.close()
         return redirect(url_for('urls_get'))
     
     repo.save(norm_url)
-    conn.closed()
+    conn.close()
     flash('Страница успешно добавлена', 'success')
     return redirect(url_for('urls_get'))
