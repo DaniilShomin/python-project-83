@@ -1,12 +1,13 @@
 import os
 from datetime import date
-import requests
+
 import psycopg2
+import requests
 import validators
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from flask import (
     Flask,
-    Response,
     flash,
     get_flashed_messages,
     redirect,
@@ -122,19 +123,25 @@ def urls_checks(id):
     try:                
         req = requests.get(url['name'])
         req.raise_for_status()        
-    except:
+    except Exception:
         error = True
         flash('Произошла ошибка при проверке', 'danger')
     if not error:
+        soup = BeautifulSoup(req.text, 'html.parser')
+        extracted_h1 = soup.h1.string if soup.h1 else ''
+        extracted_title = soup.title.string if soup.title else ''
+        meta_tag = soup.find('meta', attrs={'name': 'description'})
+        extracted_description = meta_tag['content'] if meta_tag else ''
         check_repo = UrlCheckReposetory(conn)
         data = {
             'url_id': id, 
             'status_code': req.status_code, 
-            'h1': '', 
-            'title': '', 
-            'description': '', 
+            'h1': extracted_h1, 
+            'title': extracted_title, 
+            'description': extracted_description, 
             'created_at': date.today()
         }
         check_repo.get_add(data)
+        flash('Страница успешно проверена', 'success')
     conn.close()
     return redirect(url_for('urls_show', id=id))
