@@ -1,31 +1,48 @@
-from dotenv import load_dotenv
 import os
-import psycopg2
-from flask import Flask, render_template, url_for, request, flash, redirect, get_flashed_messages
-from modules import normalized_urls
-from repository import UrlReposetory
-import validators
 from datetime import date
+
+import psycopg2
+import validators
+from dotenv import load_dotenv
+from flask import (
+    Flask,
+    flash,
+    get_flashed_messages,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+
+from modules import normalized_urls
+from repository import UrlCheckReposetory, UrlReposetory
 
 load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
 
+
 @app.route('/')
 def index():
     messages = get_flashed_messages(with_categories=True)
     return render_template(
         "index.html", 
-        urls = '',
+        urls='',
         messages=messages
     )
+
 
 @app.route('/urls')
 def urls_get():
     conn = psycopg2.connect(DATABASE_URL)
     repo = UrlReposetory(conn)
+    check_repo = UrlCheckReposetory(conn)
     urls = repo.get_content(reversed=True)
+    for url in urls:
+        check_url = check_repo.find_last_check(url['id'])
+        url['last_check'] = check_url.get('created_at', '')
+        url['status_code'] = check_url.get('status_code', '')
     conn.close()
     messages = get_flashed_messages(with_categories=True)
     return render_template(
@@ -33,6 +50,7 @@ def urls_get():
         urls=urls,
         messages=messages
     )
+
 
 @app.route('/urls', methods=['POST'])
 def urls_post():
@@ -42,7 +60,7 @@ def urls_post():
         messages = get_flashed_messages(with_categories=True)
         return render_template(
             'index.html',
-            urls = url,
+            urls=url,
             messages=messages
         ), 422
     if len(url) > 255 or not validators.url(url):
@@ -50,7 +68,7 @@ def urls_post():
         messages = get_flashed_messages(with_categories=True)
         return render_template(
             'index.html',
-            urls = url,
+            urls=url,
             messages=messages
         ), 422   
     conn = psycopg2.connect(DATABASE_URL)
@@ -70,15 +88,36 @@ def urls_post():
     flash('Страница успешно добавлена', 'success')
     return redirect(url_for('urls_get')), 302
 
+
 @app.route('/urls/<id>')
 def urls_show(id):
     conn = psycopg2.connect(DATABASE_URL)
     repo = UrlReposetory(conn)
+    check_repo = UrlCheckReposetory(conn)
     url = repo.find(id)
+    checks_url = check_repo.get_content(id, True)
     conn.close()
     messages = get_flashed_messages(with_categories=True)
     return render_template(
         'urls/show.html',
         messages=messages,
-        url=url
+        url=url,
+        checks_url=checks_url
     )
+
+
+@app.route('/urls/<id>/checks', methods=['POST'])
+def urls_checks(id):
+    conn = psycopg2.connect(DATABASE_URL)
+    check_repo = UrlCheckReposetory(conn)
+    data = {
+        'url_id': id, 
+        'status_code': 0, 
+        'h1': '', 
+        'title': '', 
+        'description': '', 
+        'created_at': date.today()
+    }
+    check_repo.get_add(data)
+    conn.close()
+    return redirect(url_for('urls_show', id=id))
