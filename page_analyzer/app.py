@@ -1,11 +1,12 @@
 import os
 from datetime import date
-
+import requests
 import psycopg2
 import validators
 from dotenv import load_dotenv
 from flask import (
     Flask,
+    Response,
     flash,
     get_flashed_messages,
     redirect,
@@ -40,9 +41,15 @@ def urls_get():
     check_repo = UrlCheckReposetory(conn)
     urls = repo.get_content(reversed=True)
     for url in urls:
-        check_url = check_repo.find_last_check(url['id'])
-        url['last_check'] = check_url.get('created_at', '')
-        url['status_code'] = check_url.get('status_code', '')
+        check_url = check_repo.get_content(url['id'], True)
+        if check_url:
+            url['last_check'] = check_url[0]['created_at']
+            url['status_code'] = check_url[0]['status_code']
+        else:
+            url.update({
+                'last_check': '',
+                'status_code': ''
+            })
     conn.close()
     messages = get_flashed_messages(with_categories=True)
     return render_template(
@@ -109,15 +116,25 @@ def urls_show(id):
 @app.route('/urls/<id>/checks', methods=['POST'])
 def urls_checks(id):
     conn = psycopg2.connect(DATABASE_URL)
-    check_repo = UrlCheckReposetory(conn)
-    data = {
-        'url_id': id, 
-        'status_code': 0, 
-        'h1': '', 
-        'title': '', 
-        'description': '', 
-        'created_at': date.today()
-    }
-    check_repo.get_add(data)
+    repo = UrlReposetory(conn)
+    url = repo.find(id)
+    error = False
+    try:                
+        req = requests.get(url['name'])
+        req.raise_for_status()        
+    except:
+        error = True
+        flash('Произошла ошибка при проверке', 'danger')
+    if not error:
+        check_repo = UrlCheckReposetory(conn)
+        data = {
+            'url_id': id, 
+            'status_code': req.status_code, 
+            'h1': '', 
+            'title': '', 
+            'description': '', 
+            'created_at': date.today()
+        }
+        check_repo.get_add(data)
     conn.close()
     return redirect(url_for('urls_show', id=id))

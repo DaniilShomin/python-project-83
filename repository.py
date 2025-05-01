@@ -83,13 +83,3 @@ class UrlCheckReposetory:
             else:
                 cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (id,))
             return [dict(row) for row in cur]
-        
-    def find_last_check(self, id):
-        with self.conn.cursor(cursor_factory=DictCursor) as cur:
-            cur.execute(
-                """SELECT * FROM url_checks 
-                WHERE url_id = %s ORDER BY id DESC""", 
-                (id,)
-            )
-            row = cur.fetchone()
-            return dict(row) if row else {}
