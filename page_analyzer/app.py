@@ -121,7 +121,7 @@ def urls_checks(id):
     url = repo.find(id)
     error = False
     try:                
-        req = requests.get(url['name'], timeout=5)
+        req = requests.get(url['name'], timeout=2)
         req.raise_for_status()        
     except Exception:
         error = True
