@@ -3,7 +3,6 @@ from datetime import date
 
 import psycopg2
 import requests
-import validators
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from flask import (
@@ -16,7 +15,7 @@ from flask import (
     url_for,
 )
 
-from modules import normalized_urls
+from modules import normalized_urls, not_correct_url
 from repository import UrlCheckReposetory, UrlReposetory
 
 load_dotenv()
@@ -42,7 +41,7 @@ def urls_get():
     check_repo = UrlCheckReposetory(conn)
     urls = repo.get_content(reversed=True)
     for url in urls:
-        check_url = check_repo.get_content(url['id'], True)
+        check_url = check_repo.get_content(url['id'], reversed=True)
         if check_url:
             url['last_check'] = check_url[0]['created_at']
             url['status_code'] = check_url[0]['status_code']
@@ -63,22 +62,15 @@ def urls_get():
 @app.route('/urls', methods=['POST'])
 def urls_post():
     url = request.form.get('url', '')
-    if not url:
-        flash('URL обязателен', 'danger')
+    error = not_correct_url(url)
+    if error:
+        flash(f'{error}', 'danger')
         messages = get_flashed_messages(with_categories=True)
         return render_template(
             'index.html',
             urls=url,
             messages=messages
-        ), 422
-    if len(url) > 255 or not validators.url(url):
-        flash('Некорректный URL', 'danger')
-        messages = get_flashed_messages(with_categories=True)
-        return render_template(
-            'index.html',
-            urls=url,
-            messages=messages
-        ), 422   
+        ), 422 
     conn = psycopg2.connect(DATABASE_URL)
     repo = UrlReposetory(conn)
     norm_url = {
@@ -89,12 +81,12 @@ def urls_post():
     if url_in_repo:
         flash('Страница уже существует', 'info')
         conn.close()
-        return redirect(url_for('urls_show', id=url_in_repo['id'])), 302
-    
-    repo.save(norm_url)
+        return redirect(url_for('urls_show', id=url_in_repo['id'])), 301
+    else:
+        repo.save(norm_url)
+        flash('Страница успешно добавлена', 'success')
     conn.close()
-    flash('Страница успешно добавлена', 'success')
-    return redirect(url_for('urls_get')), 302
+    return redirect(url_for('urls_show', id=norm_url['id'])), 301
 
 
 @app.route('/urls/<id>')
@@ -103,7 +95,7 @@ def urls_show(id):
     repo = UrlReposetory(conn)
     check_repo = UrlCheckReposetory(conn)
     url = repo.find(id)
-    checks_url = check_repo.get_content(id, True)
+    checks_url = check_repo.get_content(id, reversed=True)
     conn.close()
     messages = get_flashed_messages(with_categories=True)
     return render_template(
@@ -121,7 +113,7 @@ def urls_checks(id):
     url = repo.find(id)
     error = False
     try:                
-        req = requests.get(url['name'], timeout=2)
+        req = requests.get(url['name'], timeout=2, auth=('user', 'pass'))
         req.raise_for_status()        
     except Exception:
         error = True
