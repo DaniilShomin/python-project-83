@@ -7,7 +7,7 @@
 Eexample of work: https://python-project-83-86oi.onrender.com
 
 ## How to install  
-* 1. Creat database [PostgreSQL](https://github.com/Hexlet/ru-instructions/blob/main/postgresql.md)  
+* Creat database [PostgreSQL](https://github.com/Hexlet/ru-instructions/blob/main/postgresql.md)  
 * Create .env according to .env_example  
 * Run the installation commands  
 ```
